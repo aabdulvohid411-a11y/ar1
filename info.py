@@ -1,10 +1,10 @@
 import os
 import a2s
+import asyncio
 from aiogram import Bot, Dispatcher, types
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton, InputFile
+from aiogram.types import KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup, InputFile
 from aiogram.filters import Command
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
-import asyncio
 
 TOKEN = "8339628428:AAGQza4vAsjKAexSKti1gHRkfYbE-xE0-r8"
 
