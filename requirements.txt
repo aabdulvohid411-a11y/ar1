@@ -1,2 +1,4 @@
-python-telegram-bot==20.6
-python-a2s==1.3.0
+aiogram==3.1.1
+a2s==5.0.1
+
+
