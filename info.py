@@ -1,7 +1,7 @@
 import os
 import a2s
 import asyncio
-from telegram import BotCommand, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton, FSInputFile
+from telegram import BotCommand, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton, InputFile
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 
 TOKEN = "8339628428:AAGQza4vAsjKAexSKti1gHRkfYbE-xE0-r8"
@@ -150,4 +150,5 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
