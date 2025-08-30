@@ -1,3 +1,4 @@
-pip install --upgrade pip
+
 aiogram==3.1.1
 a2s==1.0.1
+
