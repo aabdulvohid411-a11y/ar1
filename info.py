@@ -73,7 +73,7 @@ async def send_with_button(chat_id: int, msg: str, application):
     photo_path = os.path.join(os.path.dirname(__file__), "logo.jpg")
     
     if os.path.exists(photo_path):
-        photo = FSInputFile(photo_path)
+        photo = InputFile(photo_path)
         await application.bot.send_photo(chat_id=chat_id, photo=photo, caption=msg, reply_markup=keyboard)
     else:
         await application.bot.send_message(chat_id=chat_id, text=msg, reply_markup=keyboard)
@@ -150,5 +150,6 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
