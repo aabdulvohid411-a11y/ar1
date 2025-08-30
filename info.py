@@ -1,8 +1,19 @@
-from telegram import ReplyKeyboardMarkup, BotCommand, InlineKeyboardMarkup, InlineKeyboardButton
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
-import telegram.error
+from telegram import (
+    ReplyKeyboardMarkup, 
+    BotCommand, 
+    InlineKeyboardMarkup, 
+    InlineKeyboardButton
+)
+from telegram.ext import (
+    Application, 
+    CommandHandler, 
+    MessageHandler, 
+    filters, 
+    ContextTypes
+)
 import a2s
 import os
+import asyncio
 
 SERVERS = {
     "Public": ("198.163.207.119", 27015, "armcs.uz:27015"),
@@ -10,11 +21,10 @@ SERVERS = {
     "CW2": ("198.163.207.119", 27016, "armcs.uz:27016"),
 }
 
-# 🔹 Bitta server haqida to'liq ma'lumot
+# 🔹 Server haqida info
 def get_info(server_name):
     host, port, domen = SERVERS[server_name]
     try:
-        # timeout qo‘shildi (5 soniya)
         info = a2s.info((host, port), timeout=5.0)
         players = a2s.players((host, port), timeout=5.0)
     except Exception as e:
@@ -42,7 +52,7 @@ def get_info(server_name):
 
     return text
 
-# 🔹 Barcha serverlar haqida qisqa info (faqat /info uchun)
+# 🔹 Barcha serverlar haqida
 def get_all_info():
     text = ""
     mapping = {"Public": "/public", "CW1": "/cw", "CW2": "/cw2"}
@@ -63,8 +73,8 @@ def get_all_info():
 
     return text.strip()
 
-# 🔹 Rasm + tugmalar bilan yuborish
-def send_with_button(update, context, msg):
+# 🔹 Tugmalar + rasm bilan yuborish
+async def send_with_button(update, context, msg):
     keyboard = [
         [InlineKeyboardButton("👑 Стать админом", url="https://t.me/aLi_Raadx")],
         [InlineKeyboardButton("🌍 Наш сайт", url="https://armcs.uz")]
@@ -72,31 +82,26 @@ def send_with_button(update, context, msg):
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     photo_path = os.path.join(os.path.dirname(__file__), "logo.jpg")
-    
+
     try:
         with open(photo_path, "rb") as photo_file:
-            context.bot.send_photo(
-                chat_id=update.effective_chat.id,
+            await update.message.reply_photo(
                 photo=photo_file,
                 caption=msg,
                 reply_markup=reply_markup
             )
     except FileNotFoundError:
-        print("❌ Rasm topilmadi:", photo_path)
-        update.effective_chat.send_message(msg)
-    except telegram.error.NetworkError as e:
-        print("Network error:", e)
-    except Exception as e:
-        print("Other error:", e)
+        await update.message.reply_text(msg)
 
-def start(update, context):
+# 🔹 Start komandasi
+async def start(update, context: ContextTypes.DEFAULT_TYPE):
     chat_type = update.message.chat.type
     if chat_type == "private":
-        keyboard = [[ "📌Инфо","⚡️Public", "🌟ClanWar", "🔥Cheaters"]]
+        keyboard = [["📌Инфо","⚡️Public", "🌟ClanWar", "🔥Cheaters"]]
         reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-        update.message.reply_text("Выберите сервер 👇", reply_markup=reply_markup)
+        await update.message.reply_text("Выберите сервер 👇", reply_markup=reply_markup)
     else:
-        update.message.reply_text(
+        await update.message.reply_text(
             "👋 Здравствуйте!\n"
             "Я — официальный инфо-бот armcs.uz.\n\n"
             "ℹ️ Чтобы получить информацию о сервере в группе используйте:\n"
@@ -106,82 +111,58 @@ def start(update, context):
             "/info"
         )
 
-# 🔹 Buyruqlarni tozalash (/public yoki /public@BotName)
-def cmd(update, context):
+# 🔹 /public, /cw, /cw2
+async def cmd(update, context: ContextTypes.DEFAULT_TYPE):
     server_name = update.message.text.split()[0]
-
-    # Agar /public@armcs1nfobot kelsa faqat /public qoldiramiz
     if "@" in server_name:
         server_name = server_name.split("@")[0]
 
     server_name = server_name.replace("/", "").upper()
-    
     mapping = {"PUBLIC": "Public", "CW": "CW1", "CW2": "CW2"}
 
     if server_name in mapping:
         msg = get_info(mapping[server_name])
-        send_with_button(update, context, msg)
+        await send_with_button(update, context, msg)
 
-
-def info(update, context):
+# 🔹 /info
+async def info(update, context: ContextTypes.DEFAULT_TYPE):
     msg = get_all_info()
-    send_with_button(update, context, msg)
+    await send_with_button(update, context, msg)
 
-def show_commands(update, context):
-    update.message.reply_text(
-        "📌 Доступные команды:\n"
-        "/public\n"
-        "/cw\n"
-        "/cw2\n"
-        "/info"
-    )
+# 🔹 Custom handler
+async def button_handler(update, context: ContextTypes.DEFAULT_TYPE):
+    text = update.message.text
+    if text == "⚡️Public":
+        msg = get_info("Public")
+    elif text == "🌟ClanWar":
+        msg = get_info("CW1")
+    elif text == "🔥Cheaters":
+        msg = get_info("CW2")
+    elif text == "📌Инфо":
+        msg = get_all_info()
+    else:
+        return
+    await send_with_button(update, context, msg)
 
-def button_handler(update, context):
-    try:
-        if update.callback_query:
-            message = update.callback_query.message
-            text = update.callback_query.data
-        elif update.message:
-            message = update.message
-            text = update.message.text
-        else:
-            return
-
-        if message.chat.type == "private":
-            if text == "⚡️Public":
-                msg = get_info("Public")
-            elif text == "🌟ClanWar":
-                msg = get_info("CW1")
-            elif text == "🔥Cheaters":
-                msg = get_info("CW2")
-            elif text == "📌Инфо":
-                msg = get_all_info()
-            else:
-                return
-            send_with_button(update, context, msg)
-    except Exception as e:
-        print("Button handler error:", e)
-
+# 🔹 Main
 def main():
-    updater = Updater("8339628428:AAGQza4vAsjKAexSKti1gHRkfYbE-xE0-r8", use_context=True)
-    dp = updater.dispatcher
+    app = Application.builder().token("8339628428:AAGQza4vAsjKAexSKti1gHRkfYbE-xE0-r8").build()
 
-    updater.bot.set_my_commands([
-        BotCommand("info", "📌Информация по всем серверам "),
-        BotCommand("public", "⚡️Информация о сервере: Узбекская Армия"),
-        BotCommand("cw", "🌟Информация о сервере:ClanWar [5X5]"),
-        BotCommand("cw2", "🔥Информация о сервере:CHEATERS [5X5]"),
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler(["public", "cw", "cw2"], cmd))
+    app.add_handler(CommandHandler("info", info))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, button_handler))
+
+    # komandalarni qo'shamiz
+    app.bot.set_my_commands([
+        BotCommand("info", "📌Информация по всем серверам"),
+        BotCommand("public", "⚡️Информация о Public сервере"),
+        BotCommand("cw", "🌟Информация о ClanWar сервере"),
+        BotCommand("cw2", "🔥Информация о CHEATERS сервере"),
     ])
 
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler(["public", "cw", "cw2"], cmd))
-    dp.add_handler(CommandHandler("info", info))
-    dp.add_handler(MessageHandler(Filters.regex(r"^/$"), show_commands))
-    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, button_handler))
-
-    updater.start_polling()
-    print("bot ishlayabdi ✅")
-    updater.idle()
+    print("bot ishlayapti ✅")
+    app.run_polling()
 
 if __name__ == "__main__":
     main()
