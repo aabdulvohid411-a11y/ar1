@@ -1,3 +1,4 @@
 aiogram==3.1.1
 a2s==1.0.1
 aiohttp==3.8.6
+pydantic<2.4
