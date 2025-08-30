@@ -1,14 +1,7 @@
 import os
 import a2s
 import asyncio
-from telegram import (
-    BotCommand,
-    InlineKeyboardMarkup,
-    InlineKeyboardButton,
-    ReplyKeyboardMarkup,
-    KeyboardButton,
-    FSInputFile,
-)
+from telegram import BotCommand, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton, FSInputFile
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 
 TOKEN = "8339628428:AAGQza4vAsjKAexSKti1gHRkfYbE-xE0-r8"
@@ -77,24 +70,21 @@ async def send_with_button(chat_id: int, msg: str, application):
         [InlineKeyboardButton("👑 Стать админом", url="https://t.me/aLi_Raadx")],
         [InlineKeyboardButton("🌍 Наш сайт", url="https://armcs.uz")]
     ])
-
     photo_path = os.path.join(os.path.dirname(__file__), "logo.jpg")
-
+    
     if os.path.exists(photo_path):
         photo = FSInputFile(photo_path)
         await application.bot.send_photo(chat_id=chat_id, photo=photo, caption=msg, reply_markup=keyboard)
     else:
         await application.bot.send_message(chat_id=chat_id, text=msg, reply_markup=keyboard)
 
-# 🔹 Start komandasi
-async def start_cmd(update, context: ContextTypes.DEFAULT_TYPE):
+# 🔹 /start komandasi
+async def start_cmd(update: ContextTypes.DEFAULT_TYPE, context: ContextTypes.DEFAULT_TYPE):
     chat_type = update.effective_chat.type
     if chat_type == "private":
         keyboard = ReplyKeyboardMarkup(
-            keyboard=[
-                [KeyboardButton("📌Инфо"), KeyboardButton("⚡️Public"),
-                 KeyboardButton("🌟ClanWar"), KeyboardButton("🔥Cheaters")]
-            ],
+            keyboard=[[KeyboardButton("📌Инфо"), KeyboardButton("⚡️Public"),
+                       KeyboardButton("🌟ClanWar"), KeyboardButton("🔥Cheaters")]],
             resize_keyboard=True
         )
         await update.message.reply_text("Выберите сервер 👇", reply_markup=keyboard)
@@ -110,25 +100,24 @@ async def start_cmd(update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 # 🔹 Server buyruqlari
-async def cmd(update, context: ContextTypes.DEFAULT_TYPE):
+async def cmd(update: ContextTypes.DEFAULT_TYPE, context: ContextTypes.DEFAULT_TYPE):
     server_name = update.message.text.split()[0]
     if "@" in server_name:
         server_name = server_name.split("@")[0]
     server_name = server_name.replace("/", "").lower()
 
     mapping = {"public": "Public", "cw": "CW1", "cw2": "CW2"}
-
     if server_name in mapping:
         msg = get_info(mapping[server_name])
         await send_with_button(update.effective_chat.id, msg, context.application)
 
 # 🔹 /info komandasi
-async def info_cmd(update, context: ContextTypes.DEFAULT_TYPE):
+async def info_cmd(update: ContextTypes.DEFAULT_TYPE, context: ContextTypes.DEFAULT_TYPE):
     msg = get_all_info()
     await send_with_button(update.effective_chat.id, msg, context.application)
 
 # 🔹 Reply tugmalar
-async def button_handler(update, context: ContextTypes.DEFAULT_TYPE):
+async def button_handler(update: ContextTypes.DEFAULT_TYPE, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
     mapping = {"⚡️Public": "Public", "🌟ClanWar": "CW1", "🔥Cheaters": "CW2", "📌Инфо": "ALL"}
     if text not in mapping:
@@ -139,24 +128,25 @@ async def button_handler(update, context: ContextTypes.DEFAULT_TYPE):
         msg = get_info(mapping[text])
     await send_with_button(update.effective_chat.id, msg, context.application)
 
+# 🔹 Main
 async def main():
-    application = ApplicationBuilder().token(TOKEN).build()
+    app = ApplicationBuilder().token(TOKEN).build()
 
     # Buyruqlar
-    application.bot.set_my_commands([
+    app.bot.set_my_commands([
         BotCommand("info", "📌Информация по всем серверам"),
         BotCommand("public", "⚡️Информация о сервере: Узбекская Армия"),
         BotCommand("cw", "🌟Информация о сервере: ClanWar [5X5]"),
         BotCommand("cw2", "🔥Информация о сервере: CHEATERS [5X5]"),
     ])
 
-    application.add_handler(CommandHandler("start", start_cmd))
-    application.add_handler(CommandHandler(["public", "cw", "cw2"], cmd))
-    application.add_handler(CommandHandler("info", info_cmd))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, button_handler))
+    app.add_handler(CommandHandler("start", start_cmd))
+    app.add_handler(CommandHandler(["public", "cw", "cw2"], cmd))
+    app.add_handler(CommandHandler("info", info_cmd))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, button_handler))
 
     print("Bot ishlayapti ✅")
-    await application.run_polling()
+    await app.run_polling()
 
 if __name__ == "__main__":
     asyncio.run(main())
